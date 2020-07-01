@@ -25,6 +25,10 @@ build(){
 	build_gh_pages
 }
 
+run() {
+	mkdocs serve -v -a localhost:7313
+}
+
 publish(){
 	build
 	git add . && git commit -m 'build gh_pages'

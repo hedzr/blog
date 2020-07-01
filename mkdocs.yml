@@ -1,6 +1,6 @@
 # Project Information
 site_name: Hedzr's Blog
-site_description: by hedzr
+site_description: "by hedzr, not blog"
 site_author: Hedzr Studio Authors
 site_url: https://hedzr.github.io/blog
 strict: false
@@ -8,10 +8,10 @@ strict: false
 # Repository
 repo_name: 'hedzr/blog'
 repo_url: 'https://hedzr.github.io/blog'
-edit_uri: 'https://hedzr.github.io/blog/pre-edit/?ref='
+edit_uri: '/blog/pre-edit/?ref='
 
 # Copyright
-copyright: 'Copyright &copy; 2019 - 2020 Hedzr Yeh'
+copyright: 'Copyright &copy; 2019 - 2020 Hedzr Yeh<br/><div style="margin: 12px 0"><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="知识共享许可协议" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />本作品采用<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议</a>进行许可。</div>'
 google_analytics:
 #  - 'UA-124463512-x'
 #  - 'auto'
@@ -87,8 +87,16 @@ nav:
   - Home: index.md
   - Algorithm:
     - Overview: algor/index.md
+    - "Ring Buffer":
+      - Overview: algor/ringbuf/index.md
+      - RingBuf 简介: algor/ringbuf/01.intro.md
+      - 无锁编程概要: algor/ringbuf/02.lock-free.md
+      - 并发编程和多核编程概要: algor/ringbuf/03.smp.md
+      - Golang 环形队列实现: algor/ringbuf/04.impl.md
   - About:
     - About: about/index.md
+    - Contrib: about/htc.md
+    - License: about/cc4.md
   - Tests:
     - Test1: tests/test1.md
     - Test2: tests/test2.md

@@ -2,9 +2,9 @@ disqus:
 
 # 编辑前须知
 
-首先，感谢您能够为 **Hedzr Notes** 做出自己的贡献。
+首先，感谢您能够为 **Hedzr‘s Blog** 做出自己的贡献。
 
-不过在开始之前，我们需要您了解并熟知 [如何参与](./intro/htc.md) 里的内容，以避免在编辑时产生不必要的麻烦。
+不过在开始之前，我们需要您了解并熟知 [如何参与](./about/htc.md) 里的内容，以避免在编辑时产生不必要的麻烦。
 
 在阅读完之后，请点击下方的按钮，然后开始编辑。
 
@@ -21,5 +21,5 @@ disqus:
 		}
 		return dft;
 	}
-	document.getElementById("btn-startedit").href = "https://github.com/hedzr/tutor/edit/master/docs" + getQueryVariable("ref", "");
+	document.getElementById("btn-startedit").href = "https://github.com/hedzr/blog/edit/master/docs" + getQueryVariable("ref", "");
 </script>
