@@ -21,7 +21,7 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML
 
 extra_css:
-  - 'statics/css/extra.css?v=16'
+  - 'statics/css/extra.css?v=17'
 
 extra:
   pagetime: 'on'
@@ -92,7 +92,7 @@ nav:
       - RingBuf 简介: algor/ringbuf/01.intro.md
       - 无锁编程概要: algor/ringbuf/02.lock-free.md
       - 并发编程和多核编程概要: algor/ringbuf/03.smp.md
-      - Golang 环形队列实现: algor/ringbuf/04.impl.md
+      - "Golang 环形队列实现": algor/ringbuf/04.impl.md
   - About:
     - About: about/index.md
     - Contrib: about/htc.md
