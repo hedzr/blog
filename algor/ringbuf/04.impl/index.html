@@ -1,0 +1,1451 @@
+
+
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="by hedzr, not blog">
+      
+      
+        <link rel="canonical" href="https://hedzr.github.io/blog/algor/ringbuf/04.impl/">
+      
+      
+        <meta name="author" content="Hedzr Studio Authors">
+      
+      <link rel="shortcut icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1, mkdocs-material-5.1.0">
+    
+    
+      
+        <title>Golang 环形队列实现 - Hedzr's Blog</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.89dc9fe3.min.css">
+      
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ecd4686e.min.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Titillium+Web:300,400,400i,700%7CFira+Mono&display=fallback">
+        <style>body,input{font-family:"Titillium Web",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Fira Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+      <link rel="manifest" href="../../../manifest.webmanifest" crossorigin="use-credentials">
+    
+    
+      <link rel="stylesheet" href="../../../statics/css/extra.css?v=17">
+    
+    
+      
+        
+<link rel="preconnect dns-prefetch" href="https://www.google-analytics.com">
+<script>window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","UA-171624977-1","auto"),ga("set","anonymizeIp",!0),ga("send","pageview"),document.addEventListener("DOMContentLoaded",function(){document.forms.search&&document.forms.search.query.addEventListener("blur",function(){if(this.value){var e=document.location.pathname;ga("send","pageview",e+"?q="+this.value)}})}),document.addEventListener("DOMContentSwitch",function(){ga("send","pageview")})</script>
+<script async src="https://www.google-analytics.com/analytics.js"></script>
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    <body dir="" data-md-color-primary="blue-grey" data-md-color-accent="brown">
+  
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#golang" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="">
+    <a href="https://hedzr.github.io/blog" title="Hedzr's Blog" class="md-header-nav__button md-logo" aria-label="Hedzr's Blog">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,8A3,3 0 0,0 15,5A3,3 0 0,0 12,2A3,3 0 0,0 9,5A3,3 0 0,0 12,8M12,11.54C9.64,9.35 6.5,8 3,8V19C6.5,19 9.64,20.35 12,22.54C14.36,20.35 17.5,19 21,19V8C17.5,8 14.36,9.35 12,11.54Z" /></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" /></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            Hedzr's Blog
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              Golang 环形队列实现
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            键入以开始搜索
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://hedzr.github.io/blog/" title="前往 GitHub 仓库" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hedzr/blog
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+        
+      
+      
+        
+          
+
+  
+
+<nav class="md-tabs md-tabs--active" aria-label="" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  <li class="md-tabs__item">
+    
+      <a href="../../.." class="md-tabs__link">
+        Home
+      </a>
+    
+  </li>
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../" class="md-tabs__link md-tabs__link--active">
+          Algorithm
+        </a>
+      
+    </li>
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../../about/" class="md-tabs__link">
+          About
+        </a>
+      
+    </li>
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../../tests/test1/" class="md-tabs__link">
+          Tests
+        </a>
+      
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" aria-label="" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="https://hedzr.github.io/blog" title="Hedzr's Blog" class="md-nav__button md-logo" aria-label="Hedzr's Blog">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,8A3,3 0 0,0 15,5A3,3 0 0,0 12,2A3,3 0 0,0 9,5A3,3 0 0,0 12,8M12,11.54C9.64,9.35 6.5,8 3,8V19C6.5,19 9.64,20.35 12,22.54C14.36,20.35 17.5,19 21,19V8C17.5,8 14.36,9.35 12,11.54Z" /></svg>
+
+    </a>
+    Hedzr's Blog
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://hedzr.github.io/blog/" title="前往 GitHub 仓库" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    hedzr/blog
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Algorithm
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Algorithm" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+        </span>
+        Algorithm
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2" checked>
+    
+    <label class="md-nav__link" for="nav-2-2">
+      Ring Buffer
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Ring Buffer" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-2">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+        </span>
+        Ring Buffer
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../" title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../01.intro/" title="RingBuf 简介" class="md-nav__link">
+      RingBuf 简介
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../02.lock-free/" title="无锁编程概要" class="md-nav__link">
+      无锁编程概要
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../03.smp/" title="并发编程和多核编程概要" class="md-nav__link">
+      并发编程和多核编程概要
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Golang 环形队列实现
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3,9H17V7H3V9M3,13H17V11H3V13M3,17H17V15H3V17M19,17H21V15H19V17M19,7V9H21V7H19M19,13H21V11H19V13Z" /></svg>
+        </span>
+      </label>
+    
+    <a href="./" title="Golang 环形队列实现" class="md-nav__link md-nav__link--active">
+      Golang 环形队列实现
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+      </span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    基本定义
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    操作
+  </a>
+  
+    <nav class="md-nav" aria-label="操作">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    测试：队列空，队列满
+  </a>
+  
+    <nav class="md-nav" aria-label="测试：队列空，队列满">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#headtail" class="md-nav__link">
+    关于 head/tail 的载入优化
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#headtail_1" class="md-nav__link">
+    进一步的针对 head/tail 的优化
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    关于判定算法
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cap-size" class="md-nav__link">
+    Cap 和 Size
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enqueue-put" class="md-nav__link">
+    Enqueue / Put
+  </a>
+  
+    <nav class="md-nav" aria-label="Enqueue / Put">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#put" class="md-nav__link">
+    Put 算法
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    例外情况
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dequeue-get" class="md-nav__link">
+    Dequeue / Get
+  </a>
+  
+    <nav class="md-nav" aria-label="Dequeue / Get">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get" class="md-nav__link">
+    Get算法
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    小结
+  </a>
+  
+    <nav class="md-nav" aria-label="小结">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    性能
+  </a>
+  
+    <nav class="md-nav" aria-label="性能">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mpmc" class="md-nav__link">
+    MPMC
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    对照
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    说明
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    🔚
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      About
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="About" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+        </span>
+        About
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../about/" title="About" class="md-nav__link">
+      About
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../about/htc/" title="Contrib" class="md-nav__link">
+      Contrib
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../about/cc4/" title="License" class="md-nav__link">
+      License
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4">
+    
+    <label class="md-nav__link" for="nav-4">
+      Tests
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" /></svg>
+      </span>
+    </label>
+    <nav class="md-nav" aria-label="Tests" data-md-level="1">
+      <label class="md-nav__title" for="nav-4">
+        <span class="md-nav__icon md-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+        </span>
+        Tests
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../tests/test1/" title="Test1" class="md-nav__link">
+      Test1
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../tests/test2/" title="Test2" class="md-nav__link">
+      Test2
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+      </span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    基本定义
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    操作
+  </a>
+  
+    <nav class="md-nav" aria-label="操作">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    测试：队列空，队列满
+  </a>
+  
+    <nav class="md-nav" aria-label="测试：队列空，队列满">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#headtail" class="md-nav__link">
+    关于 head/tail 的载入优化
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#headtail_1" class="md-nav__link">
+    进一步的针对 head/tail 的优化
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    关于判定算法
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cap-size" class="md-nav__link">
+    Cap 和 Size
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#enqueue-put" class="md-nav__link">
+    Enqueue / Put
+  </a>
+  
+    <nav class="md-nav" aria-label="Enqueue / Put">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#put" class="md-nav__link">
+    Put 算法
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    例外情况
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dequeue-get" class="md-nav__link">
+    Dequeue / Get
+  </a>
+  
+    <nav class="md-nav" aria-label="Dequeue / Get">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#get" class="md-nav__link">
+    Get算法
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    小结
+  </a>
+  
+    <nav class="md-nav" aria-label="小结">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    性能
+  </a>
+  
+    <nav class="md-nav" aria-label="性能">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mpmc" class="md-nav__link">
+    MPMC
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    对照
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    说明
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    🔚
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://hedzr.github.io/blog/pre-edit/?ref=/algor/ringbuf/04.impl.md" title="编辑此页" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" /></svg>
+                  </a>
+                
+                
+                  
+                
+                
+                <h1 id="golang">Golang版本环形队列实现<a class="headerlink" href="#golang" title="Permanent link">&para;</a></h1>
+<p><a href="https://github.com/hedzr/go-ringbuf">https://github.com/hedzr/go-ringbuf</a></p>
+<p>下面将依据前面的背景知识实现一个无锁的环形队列（Circular Queue，Ring Buffer），尽可能地解除各种竞争状况。</p>
+<h3 id="_1">基本定义<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<p>首先是队列的大小，多数已有的环形队列均推荐使用 2 的冥数（<code>2^n</code>）为队列尺寸，其好处在于通过和 <code>2^n-1</code> 的 <code>AND</code> 操作即可将 <code>head</code>/<code>tail</code> 指针绕回，避免了 <code>mod</code> 操作。在 CPU 指令集中，<code>mod</code> 操作依赖于一个 <code>IDIV</code> （整数除法）运算，这通常是 <code>AND</code> 操作耗时的数倍。</p>
+<p>其次是 <code>ringbuf</code> 结构体的对齐，在 Golang 中这是自动的，所以没有什么可说的。</p>
+<p>为了解决 <code>ringbuf</code> 元素数组中每个元素 <code>rbItem</code> 的 CacheLine 问题，我们对其进行了填充，使得一个 <code>rbItem</code> 能够占满一个 CacheLine。</p>
+<div class="highlight"><pre><span></span><code><span class="kd">type</span> <span class="p">(</span>
+    <span class="nx">Queue</span> <span class="kd">interface</span> <span class="p">{</span>
+        <span class="nx">Enqueue</span><span class="p">(</span><span class="nx">item</span> <span class="kd">interface</span><span class="p">{})</span> <span class="p">(</span><span class="nx">err</span> <span class="kt">error</span><span class="p">)</span>
+        <span class="nx">Dequeue</span><span class="p">()</span> <span class="p">(</span><span class="nx">item</span> <span class="kd">interface</span><span class="p">{},</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span>
+        <span class="c1">// Cap returns the outer capacity of the ring buffer.</span>
+        <span class="nx">Cap</span><span class="p">()</span> <span class="kt">uint32</span>
+        <span class="c1">// Size returns the quantity of items in the ring buffer queue</span>
+        <span class="nx">Size</span><span class="p">()</span> <span class="kt">uint32</span>
+        <span class="nx">IsEmpty</span><span class="p">()</span> <span class="p">(</span><span class="nx">b</span> <span class="kt">bool</span><span class="p">)</span>
+        <span class="nx">IsFull</span><span class="p">()</span> <span class="p">(</span><span class="nx">b</span> <span class="kt">bool</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="nx">RingBuffer</span> <span class="kd">interface</span> <span class="p">{</span>
+        <span class="nx">io</span><span class="p">.</span><span class="nx">Closer</span> <span class="c1">// for logger</span>
+
+        <span class="nx">Queue</span>
+
+        <span class="nx">Put</span><span class="p">(</span><span class="nx">item</span> <span class="kd">interface</span><span class="p">{})</span> <span class="p">(</span><span class="nx">err</span> <span class="kt">error</span><span class="p">)</span>
+        <span class="nx">Get</span><span class="p">()</span> <span class="p">(</span><span class="nx">item</span> <span class="kd">interface</span><span class="p">{},</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span>
+
+        <span class="c1">// Quantity returns the quantity of items in the ring buffer queue</span>
+        <span class="nx">Quantity</span><span class="p">()</span> <span class="kt">uint32</span>
+
+        <span class="nx">Debug</span><span class="p">(</span><span class="nx">enabled</span> <span class="kt">bool</span><span class="p">)</span> <span class="p">(</span><span class="nx">lastState</span> <span class="kt">bool</span><span class="p">)</span>
+
+        <span class="nx">ResetCounters</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="nx">ringBuf</span> <span class="kd">struct</span> <span class="p">{</span>
+        <span class="nx">cap</span>        <span class="kt">uint32</span>
+        <span class="nx">capModMask</span> <span class="kt">uint32</span>
+        <span class="nx">head</span>       <span class="kt">uint32</span>
+        <span class="nx">tail</span>       <span class="kt">uint32</span>
+        <span class="nx">putWaits</span>   <span class="kt">uint64</span>
+        <span class="nx">getWaits</span>   <span class="kt">uint64</span>
+        <span class="nx">_</span>          <span class="p">[</span><span class="nx">CacheLinePadSize</span><span class="p">]</span><span class="kt">byte</span>
+        <span class="nx">data</span>       <span class="p">[]</span><span class="nx">rbItem</span>
+        <span class="nx">debugMode</span>  <span class="kt">bool</span>
+        <span class="nx">logger</span>     <span class="o">*</span><span class="nx">zap</span><span class="p">.</span><span class="nx">Logger</span>
+    <span class="p">}</span>
+
+    <span class="nx">rbItem</span> <span class="kd">struct</span> <span class="p">{</span>
+        <span class="nx">readWrite</span> <span class="kt">uint64</span>      <span class="c1">// 0: writable, 1: readable, 2: write ok, 3: read ok</span>
+        <span class="nx">value</span>     <span class="kd">interface</span><span class="p">{}</span> <span class="c1">// ptr</span>
+        <span class="nx">_</span>         <span class="p">[</span><span class="nx">CacheLinePadSize</span> <span class="o">-</span> <span class="mi">8</span> <span class="o">-</span> <span class="mi">8</span><span class="p">]</span><span class="kt">byte</span>
+        <span class="c1">// _         cpu.CacheLinePad</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p>至于 <code>Queue</code> 和 <code>RingBuffer</code> 是库作者的例行操作，就不赘述了。</p>
+<p>在 <code>rbItem</code> 中增加了 CacheLine 对齐字段，这是为了避免每个 producer/consumer 操作一个 <code>rbItem</code> 时彼此之间发生 false sharing 干扰。因此，多个 <code>rbItem</code>  无法被同时载入一个 Cache Line 中，所以数据竞争的问题也同时被避免了。实测呢，好像有点点改善，但也没有好到一倍的状态，不过即使没有性能改善，为了 DATA RACE 也必须进行这样的对齐，才能确保在这里不必引入一颗锁。</p>
+<p>在 <code>ringBuf</code> 中同样也有对齐字段以免操作 head/tail/putWaits/getWaits 时关联载入 data 指针，不过正因为data是指针，所以这个对齐字段的效用通常为 0。为了代码可移植性（到 C++11 模版类？），暂且保留该对齐。</p>
+<h3 id="_2">操作<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<h4 id="_3">测试：队列空，队列满<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="kd">func</span> <span class="p">(</span><span class="nx">rb</span> <span class="o">*</span><span class="nx">ringBuf</span><span class="p">)</span> <span class="nx">IsEmpty</span><span class="p">()</span> <span class="p">(</span><span class="nx">b</span> <span class="kt">bool</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">tail</span><span class="p">,</span> <span class="nx">head</span> <span class="kt">uint32</span>
+    <span class="kd">var</span> <span class="nx">quad</span> <span class="kt">uint64</span>
+    <span class="nx">quad</span> <span class="p">=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">LoadUint64</span><span class="p">((</span><span class="o">*</span><span class="kt">uint64</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">head</span><span class="p">)))</span>
+    <span class="nx">head</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">quad</span> <span class="o">&amp;</span> <span class="nx">MaxUint32_64</span><span class="p">)</span>
+    <span class="nx">tail</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">quad</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span>
+    <span class="c1">// var tail, head uint32</span>
+    <span class="c1">// head = atomic.LoadUint32(&amp;rb.head)</span>
+    <span class="c1">// tail = atomic.LoadUint32(&amp;rb.tail)</span>
+    <span class="nx">b</span> <span class="p">=</span> <span class="nx">head</span> <span class="o">==</span> <span class="nx">tail</span>
+    <span class="k">return</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">rb</span> <span class="o">*</span><span class="nx">ringBuf</span><span class="p">)</span> <span class="nx">IsFull</span><span class="p">()</span> <span class="p">(</span><span class="nx">b</span> <span class="kt">bool</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">tail</span><span class="p">,</span> <span class="nx">head</span> <span class="kt">uint32</span>
+    <span class="kd">var</span> <span class="nx">quad</span> <span class="kt">uint64</span>
+    <span class="nx">quad</span> <span class="p">=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">LoadUint64</span><span class="p">((</span><span class="o">*</span><span class="kt">uint64</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">head</span><span class="p">)))</span>
+    <span class="nx">head</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">quad</span> <span class="o">&amp;</span> <span class="nx">MaxUint32_64</span><span class="p">)</span>
+    <span class="nx">tail</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">quad</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span>
+    <span class="nx">b</span> <span class="p">=</span> <span class="p">((</span><span class="nx">tail</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nx">rb</span><span class="p">.</span><span class="nx">capModMask</span><span class="p">)</span> <span class="o">==</span> <span class="nx">head</span>
+    <span class="k">return</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h5 id="headtail">关于 head/tail 的载入优化<a class="headerlink" href="#headtail" title="Permanent link">&para;</a></h5>
+<p>由于我们限定了 head 和 tail 指针为 32 位整数，因此原子操作可以一次取得它们而不是两次。这能够带来小小的提升，实测证明了有其存在的价值。</p>
+<blockquote>
+<p>如果 CPU 架构使用 Big Endian 模式，上述代码需要被调整。</p>
+<p>在移植时才会考虑针对性改写。</p>
+<p><strong>考虑进一步优化</strong>：</p>
+<p>如果是 C++/C/ASM的话，原子指令的相关函数调用可以去掉，quard，tail，head可以使用寄存器，也无需 AND 和 SHIFT 运算。</p>
+<p>binary 包对此没有帮助。</p>
+</blockquote>
+<h5 id="headtail_1">进一步的针对 head/tail 的优化<a class="headerlink" href="#headtail_1" title="Permanent link">&para;</a></h5>
+<p>由于 put 操作使用 tail 和 head，但不会修改 head（相应的 get 操作也类似于此），所以我们还有另一个选择进行性能提升：</p>
+<p>分离 head 和 tail 的存储位置保证不会同时载入单一 CacheLine。</p>
+<p>这个策略可以这样实现：</p>
+<div class="highlight"><pre><span></span><code>    <span class="nx">ringBuf</span> <span class="kd">struct</span> <span class="p">{</span>
+        <span class="nx">cap</span>        <span class="kt">uint32</span>
+        <span class="nx">capModMask</span> <span class="kt">uint32</span>
+        <span class="nx">_</span>          <span class="p">[</span><span class="nx">CacheLinePadSize</span> <span class="o">-</span> <span class="mi">8</span><span class="p">]</span><span class="kt">byte</span>
+        <span class="nx">head</span>       <span class="kt">uint32</span>
+        <span class="nx">_</span>          <span class="p">[</span><span class="nx">CacheLinePadSize</span> <span class="o">-</span> <span class="mi">4</span><span class="p">]</span><span class="kt">byte</span>
+        <span class="nx">tail</span>       <span class="kt">uint32</span>
+        <span class="nx">_</span>          <span class="p">[</span><span class="nx">CacheLinePadSize</span> <span class="o">-</span> <span class="mi">4</span><span class="p">]</span><span class="kt">byte</span>
+        <span class="nx">putWaits</span>   <span class="kt">uint64</span>
+        <span class="nx">_</span>          <span class="p">[</span><span class="nx">CacheLinePadSize</span> <span class="o">-</span> <span class="mi">8</span><span class="p">]</span><span class="kt">byte</span>
+        <span class="nx">getWaits</span>   <span class="kt">uint64</span>
+        <span class="nx">_</span>          <span class="p">[</span><span class="nx">CacheLinePadSize</span> <span class="o">-</span> <span class="mi">8</span><span class="p">]</span><span class="kt">byte</span>
+        <span class="nx">data</span>       <span class="p">[]</span><span class="nx">rbItem</span>
+        <span class="nx">debugMode</span>  <span class="kt">bool</span>
+        <span class="nx">logger</span>     <span class="o">*</span><span class="nx">zap</span><span class="p">.</span><span class="nx">Logger</span>
+    <span class="p">}</span>
+
+<span class="c1">// 此时需要分别取得 head tail：</span>
+<span class="kd">var</span> <span class="nx">tail</span><span class="p">,</span> <span class="nx">head</span> <span class="kt">uint32</span>
+<span class="nx">head</span> <span class="p">=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">LoadUint32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">head</span><span class="p">)</span>
+<span class="nx">tail</span> <span class="p">=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">LoadUint32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">tail</span><span class="p">)</span>
+</code></pre></div>
+
+<p>这种方法应该比当前的简要方案更具有优势。但是出于试验的目的，我们暂时没有应用该方案，而是将此优化推迟到 v1.x 发布时。目前 go-ringbuf v0.7.x 将采用前文述及到单次原子操作方案。</p>
+<h5 id="_4">关于判定算法<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h5>
+<p>我们采用标准的环形队列实现方案：</p>
+<ol>
+<li>保留一个元素的空间</li>
+</ol>
+<p>即不允许 tail 赶上 head，队尾节点和对首节点之间至少留有一个元素的空间。</p>
+<p>如果 head == tail，队列空；</p>
+<p>如果 (tail+1) % M == head，队列满。</p>
+<h4 id="cap-size">Cap 和 Size<a class="headerlink" href="#cap-size" title="Permanent link">&para;</a></h4>
+<p><code>Cap()</code> 表示环形队列的容量，<code>Size()</code> 及其同义词 <code>Quantity()</code> 返回的是当前队列中的元素数量。</p>
+<div class="highlight"><pre><span></span><code><span class="kd">func</span> <span class="p">(</span><span class="nx">rb</span> <span class="o">*</span><span class="nx">ringBuf</span><span class="p">)</span> <span class="nx">Quantity</span><span class="p">()</span> <span class="kt">uint32</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">rb</span><span class="p">.</span><span class="nx">Size</span><span class="p">()</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">rb</span> <span class="o">*</span><span class="nx">ringBuf</span><span class="p">)</span> <span class="nx">Size</span><span class="p">()</span> <span class="kt">uint32</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">quantity</span> <span class="kt">uint32</span>
+    <span class="c1">// head = atomic.LoadUint32(&amp;rb.head)</span>
+    <span class="c1">// tail = atomic.LoadUint32(&amp;rb.tail)</span>
+    <span class="kd">var</span> <span class="nx">tail</span><span class="p">,</span> <span class="nx">head</span> <span class="kt">uint32</span>
+    <span class="kd">var</span> <span class="nx">quad</span> <span class="kt">uint64</span>
+    <span class="nx">quad</span> <span class="p">=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">LoadUint64</span><span class="p">((</span><span class="o">*</span><span class="kt">uint64</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">head</span><span class="p">)))</span>
+    <span class="nx">head</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">quad</span> <span class="o">&amp;</span> <span class="nx">MaxUint32_64</span><span class="p">)</span>
+    <span class="nx">tail</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">quad</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nx">tail</span> <span class="o">&gt;=</span> <span class="nx">head</span> <span class="p">{</span>
+        <span class="nx">quantity</span> <span class="p">=</span> <span class="nx">tail</span> <span class="o">-</span> <span class="nx">head</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">quantity</span> <span class="p">=</span> <span class="nx">rb</span><span class="p">.</span><span class="nx">capModMask</span> <span class="o">+</span> <span class="p">(</span><span class="nx">tail</span> <span class="o">-</span> <span class="nx">head</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nx">quantity</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="p">(</span><span class="nx">rb</span> <span class="o">*</span><span class="nx">ringBuf</span><span class="p">)</span> <span class="nx">Cap</span><span class="p">()</span> <span class="kt">uint32</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">rb</span><span class="p">.</span><span class="nx">cap</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h4 id="enqueue-put">Enqueue / Put<a class="headerlink" href="#enqueue-put" title="Permanent link">&para;</a></h4>
+<p>一些无锁方案在实现之后会显得较为玄妙，这当然是体现了设计者的精巧思路的。其麻烦在于，配图配论文都不容易改善它们的可读性。</p>
+<h5 id="put">Put 算法<a class="headerlink" href="#put" title="Permanent link">&para;</a></h5>
+<p>在我们的 <code>ringBuf</code> 中，解决无锁以及避让问题采用了比较明晰而且简洁的路子，其思路是这样的：</p>
+<ol>
+<li>
+<p>每个 <code>rbItem</code> 承载着一个标志 <code>readWrite</code> 以及元素实体 <code>value</code></p>
+</li>
+<li>
+<p>申请队尾写入权</p>
+</li>
+</ol>
+<p>当入队列操作时，首先期待 <code>readWrite</code> == 0，这意味着这个队列尾部的 <code>rbItem</code> 是干净的，写入就绪的（即空闲状态）；</p>
+<p>一旦原子操作确认到这样的队列尾部 <code>rbItem</code>，则其 <code>readWrite</code> 标志也被更新为 2。这表示着该 <code>rbItem</code> 被申请成功了。其它 producers 将无法取得该 <code>rbItem</code> 作为它们的写入目标了。</p>
+<ol>
+<li>
+<p>现在是时候更新 <code>tail</code> 指针到下一元素了</p>
+</li>
+<li>
+<p>同时，我们可以安全地更新 <code>value</code> 成员（多个 <code>rbItem</code>  无法被同时载入一个 Cache Line 中）</p>
+</li>
+<li>
+<p>最后，我们将 <code>readWrite</code> 标志更新为 <code>1</code>，这标志着入列操作已经完成，这个 <code>rbItem</code> 现在是读出就绪的</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="kd">func</span> <span class="p">(</span><span class="nx">rb</span> <span class="o">*</span><span class="nx">ringBuf</span><span class="p">)</span> <span class="nx">Enqueue</span><span class="p">(</span><span class="nx">item</span> <span class="kd">interface</span><span class="p">{})</span> <span class="p">(</span><span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">tail</span><span class="p">,</span> <span class="nx">head</span><span class="p">,</span> <span class="nx">nt</span> <span class="kt">uint32</span>
+    <span class="kd">var</span> <span class="nx">holder</span> <span class="o">*</span><span class="nx">rbItem</span>
+    <span class="k">for</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">quad</span> <span class="kt">uint64</span>
+        <span class="nx">quad</span> <span class="p">=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">LoadUint64</span><span class="p">((</span><span class="o">*</span><span class="kt">uint64</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">head</span><span class="p">)))</span>
+        <span class="nx">head</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">quad</span> <span class="o">&amp;</span> <span class="nx">MaxUint32_64</span><span class="p">)</span>
+        <span class="nx">tail</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">quad</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="c1">// head = atomic.LoadUint32(&amp;rb.head)</span>
+        <span class="c1">// tail = atomic.LoadUint32(&amp;rb.tail)</span>
+        <span class="nx">nt</span> <span class="p">=</span> <span class="p">(</span><span class="nx">tail</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nx">rb</span><span class="p">.</span><span class="nx">capModMask</span>
+
+        <span class="nx">isFull</span> <span class="o">:=</span> <span class="nx">nt</span> <span class="o">==</span> <span class="nx">head</span>
+        <span class="k">if</span> <span class="nx">isFull</span> <span class="p">{</span>
+            <span class="nx">err</span> <span class="p">=</span> <span class="nx">ErrQueueFull</span>
+            <span class="k">return</span>
+        <span class="p">}</span>
+
+        <span class="nx">holder</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">data</span><span class="p">[</span><span class="nx">tail</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">CompareAndSwapUint64</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">holder</span><span class="p">.</span><span class="nx">readWrite</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">holder</span><span class="p">.</span><span class="nx">value</span> <span class="p">=</span> <span class="nx">item</span>
+            <span class="nx">atomic</span><span class="p">.</span><span class="nx">CompareAndSwapUint32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">tail</span><span class="p">,</span> <span class="nx">tail</span><span class="p">,</span> <span class="nx">nt</span><span class="p">)</span>
+            <span class="k">break</span>
+        <span class="p">}</span>
+
+        <span class="nx">time</span><span class="p">.</span><span class="nx">Sleep</span><span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Nanosecond</span><span class="p">)</span>
+        <span class="nx">atomic</span><span class="p">.</span><span class="nx">AddUint64</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">putWaits</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">!</span><span class="nx">atomic</span><span class="p">.</span><span class="nx">CompareAndSwapUint64</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">holder</span><span class="p">.</span><span class="nx">readWrite</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">err</span> <span class="p">=</span> <span class="nx">fmt</span><span class="p">.</span><span class="nx">Errorf</span><span class="p">(</span><span class="s">&quot;[W] %w, 2=&gt;1, %v&quot;</span><span class="p">,</span> <span class="nx">ErrRaced</span><span class="p">,</span> <span class="nx">holder</span><span class="p">.</span><span class="nx">readWrite</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h5 id="_5">例外情况<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h5>
+<ol>
+<li>
+<p><code>步骤2</code> 操作失败时，意味着其它 producers 已经拿到了队尾 <code>rbItem</code> 的写入权，因此我们使用一个 1ns 的延迟并再次自旋，以求取得新的队尾写入权。</p>
+</li>
+<li>
+<p><code>步骤3</code> 的原子操作可能会失败。</p>
+</li>
+</ol>
+<p>这代表着这个队尾已经旧了，新的队尾已经被别的 producers 提交成功了。</p>
+<p>因此，我们可以安全地忽略 <code>tail</code> 的更新不成功的问题。</p>
+<ol>
+<li><code>步骤4</code> 存在偶然的可能性会失败。</li>
+</ol>
+<p>这种可能性发生时，代表着运行环境已经崩塌了，属于致命性错误。</p>
+<p>暂时，我不能排除时算法错误的因素带来的这个错误，但目前经过大量工程实测验证来看，算法可能不是最优的，但没有缺陷。</p>
+<p>理论上的证明需要另外成文了，以后再说了。</p>
+<h4 id="dequeue-get">Dequeue / Get<a class="headerlink" href="#dequeue-get" title="Permanent link">&para;</a></h4>
+<h5 id="get">Get算法<a class="headerlink" href="#get" title="Permanent link">&para;</a></h5>
+<p>类似于 Put 算法，Get 算法操作 head 指针并写入 value 实体：</p>
+<ol>
+<li>
+<p>每个 <code>rbItem</code> 承载着一个标志 <code>readWrite</code> 以及元素实体 <code>value</code></p>
+</li>
+<li>
+<p>申请队首读取和更新权</p>
+</li>
+</ol>
+<p>当出队列操作时，首先期待 <code>readWrite</code> == 1，这意味着这个队列尾部的 <code>rbItem</code> 是干净的，读出就绪的；</p>
+<p>一旦原子操作确认到这样的队列尾部 <code>rbItem</code>，则其 <code>readWrite</code> 标志也被更新为 3。这表示着该 <code>rbItem</code> 被申请成功了。其它 consumers 将无法取得该 <code>rbItem</code> 作为它们的读出目标了。</p>
+<ol>
+<li>
+<p>现在是时候更新 <code>head</code> 指针到下一元素了</p>
+</li>
+<li>
+<p>同时，我们可以安全地读取 <code>value</code> 成员（多个 <code>rbItem</code>  无法被同时载入一个 Cache Line 中）</p>
+</li>
+<li>
+<p>最后，我们将 <code>readWrite</code> 标志更新为 <code>0</code>，这标志着出列操作已经完成，这个 <code>rbItem</code> 现在是空闲状态了。</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="kd">func</span> <span class="p">(</span><span class="nx">rb</span> <span class="o">*</span><span class="nx">ringBuf</span><span class="p">)</span> <span class="nx">Dequeue</span><span class="p">()</span> <span class="p">(</span><span class="nx">item</span> <span class="kd">interface</span><span class="p">{},</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">tail</span><span class="p">,</span> <span class="nx">head</span><span class="p">,</span> <span class="nx">nh</span> <span class="kt">uint32</span>
+    <span class="kd">var</span> <span class="nx">holder</span> <span class="o">*</span><span class="nx">rbItem</span>
+    <span class="k">for</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">quad</span> <span class="kt">uint64</span>
+        <span class="nx">quad</span> <span class="p">=</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">LoadUint64</span><span class="p">((</span><span class="o">*</span><span class="kt">uint64</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">head</span><span class="p">)))</span>
+        <span class="nx">head</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">quad</span> <span class="o">&amp;</span> <span class="nx">MaxUint32_64</span><span class="p">)</span>
+        <span class="nx">tail</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">quad</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="c1">// head = atomic.LoadUint32(&amp;rb.head)</span>
+        <span class="c1">// tail = atomic.LoadUint32(&amp;rb.tail)</span>
+
+        <span class="nx">isEmpty</span> <span class="o">:=</span> <span class="nx">head</span> <span class="o">==</span> <span class="nx">tail</span>
+        <span class="k">if</span> <span class="nx">isEmpty</span> <span class="p">{</span>
+            <span class="nx">err</span> <span class="p">=</span> <span class="nx">ErrQueueEmpty</span>
+            <span class="k">return</span>
+        <span class="p">}</span>
+
+        <span class="nx">holder</span> <span class="p">=</span> <span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">data</span><span class="p">[</span><span class="nx">head</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nx">atomic</span><span class="p">.</span><span class="nx">CompareAndSwapUint64</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">holder</span><span class="p">.</span><span class="nx">readWrite</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">item</span> <span class="p">=</span> <span class="nx">holder</span><span class="p">.</span><span class="nx">value</span>
+            <span class="nx">nh</span> <span class="p">=</span> <span class="p">(</span><span class="nx">head</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="nx">rb</span><span class="p">.</span><span class="nx">capModMask</span>
+            <span class="nx">atomic</span><span class="p">.</span><span class="nx">CompareAndSwapUint32</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">head</span><span class="p">,</span> <span class="nx">head</span><span class="p">,</span> <span class="nx">nh</span><span class="p">)</span>
+            <span class="k">break</span>
+        <span class="p">}</span>
+
+        <span class="nx">time</span><span class="p">.</span><span class="nx">Sleep</span><span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="nx">time</span><span class="p">.</span><span class="nx">Nanosecond</span><span class="p">)</span>
+        <span class="nx">atomic</span><span class="p">.</span><span class="nx">AddUint64</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">rb</span><span class="p">.</span><span class="nx">getWaits</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">!</span><span class="nx">atomic</span><span class="p">.</span><span class="nx">CompareAndSwapUint64</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">holder</span><span class="p">.</span><span class="nx">readWrite</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">err</span> <span class="p">=</span> <span class="nx">fmt</span><span class="p">.</span><span class="nx">Errorf</span><span class="p">(</span><span class="s">&quot;[R] %w, 3=&gt;0, %v&quot;</span><span class="p">,</span> <span class="nx">ErrRaced</span><span class="p">,</span> <span class="nx">holder</span><span class="p">.</span><span class="nx">readWrite</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="nx">item</span> <span class="o">==</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="nx">err</span> <span class="p">=</span> <span class="nx">fmt</span><span class="p">.</span><span class="nx">Errorf</span><span class="p">(</span><span class="s">&quot;[ringbuf][GET] cap: %v, qty: %v, head: %v, tail: %v, new head: %v&quot;</span><span class="p">,</span> <span class="nx">rb</span><span class="p">.</span><span class="nx">cap</span><span class="p">,</span> <span class="nx">rb</span><span class="p">.</span><span class="nx">qty</span><span class="p">(</span><span class="nx">head</span><span class="p">,</span> <span class="nx">tail</span><span class="p">),</span> <span class="nx">head</span><span class="p">,</span> <span class="nx">tail</span><span class="p">,</span> <span class="nx">nh</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">!</span><span class="nx">rb</span><span class="p">.</span><span class="nx">debugMode</span> <span class="p">{</span>
+            <span class="nx">rb</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">Warn</span><span class="p">(</span><span class="s">&quot;[ringbuf][GET] &quot;</span><span class="p">,</span> <span class="nx">zap</span><span class="p">.</span><span class="nx">Uint32</span><span class="p">(</span><span class="s">&quot;cap&quot;</span><span class="p">,</span> <span class="nx">rb</span><span class="p">.</span><span class="nx">cap</span><span class="p">),</span> <span class="nx">zap</span><span class="p">.</span><span class="nx">Uint32</span><span class="p">(</span><span class="s">&quot;qty&quot;</span><span class="p">,</span> <span class="nx">rb</span><span class="p">.</span><span class="nx">qty</span><span class="p">(</span><span class="nx">head</span><span class="p">,</span> <span class="nx">tail</span><span class="p">)),</span> <span class="nx">zap</span><span class="p">.</span><span class="nx">Uint32</span><span class="p">(</span><span class="s">&quot;tail&quot;</span><span class="p">,</span> <span class="nx">tail</span><span class="p">),</span> <span class="nx">zap</span><span class="p">.</span><span class="nx">Uint32</span><span class="p">(</span><span class="s">&quot;head&quot;</span><span class="p">,</span> <span class="nx">head</span><span class="p">),</span> <span class="nx">zap</span><span class="p">.</span><span class="nx">Uint32</span><span class="p">(</span><span class="s">&quot;new head&quot;</span><span class="p">,</span> <span class="nx">nh</span><span class="p">))</span>
+        <span class="p">}</span>
+        <span class="nx">rb</span><span class="p">.</span><span class="nx">logger</span><span class="p">.</span><span class="nx">Fatal</span><span class="p">(</span><span class="s">&quot;[ringbuf][GET] [ERR] unexpected nil element value FOUND!&quot;</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="k">return</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>同样地，多个 consumers 通过 1ns 的自旋来申请读出权直至成功，这会带来潜在的阻塞问题。</p>
+<p>既然 <code>ringBuf</code> 的用途时面向高吞吐、高并发场景，那么多个 consumers 在申请读出权失败时被阻塞也是调用者期待的行为，因为那个成功的 consumer 必然会在有限的步骤里（一般来说可能是 2.691µs 这个级别）释放这个被锁定的元素，所以往往自旋 1 到数次即可拿到下一个新的队首元素的读出权、或者是返回队列为空错误由调用者决定下一步行为。</p>
+<p>注意 Enqueue 在相似的步骤中面对的情况是类似的，因而不再单独解析其行为。</p>
+<p>由于自旋部分一定会在有限步骤中退出（成功，失败，空队列），所以这部分算法是 lock free 的。</p>
+<h3 id="_6">小结<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>我们已经解释了关键性的无锁 Enqueue/Dequeue 思路，具体的实现代码在 <a href="https://github.com/hedzr/go-ringbuf">https://github.com/hedzr/go-ringbuf</a> 中可以找到。</p>
+<h4 id="_7">性能<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h4>
+<h5 id="mpmc">MPMC<a class="headerlink" href="#mpmc" title="Permanent link">&para;</a></h5>
+<p>我们在实现过程中作出了必要的取舍，目前看来算法正确性是有保障的。同时它的性能不俗：</p>
+<div class="highlight"><pre><span></span><code>$ go <span class="nb">test</span> ./ringbuf/rb -v -race -run <span class="s1">&#39;TestRingBuf_MPut&#39;</span>
+<span class="o">===</span> RUN   TestRingBuf_MPut
+    TestRingBuf_MPut: rb_test.go:223: Grp: <span class="m">16</span>, Times: <span class="m">1360000</span>, use: <span class="m">26</span>.266041367s, <span class="m">19</span>.313µs/op
+    TestRingBuf_MPut: rb_test.go:224: Put: <span class="m">1360000</span>, use: <span class="m">24</span>.036637261s, <span class="m">17</span>.673µs/op <span class="p">|</span> retry times: <span class="m">0</span>
+    TestRingBuf_MPut: rb_test.go:225: Get: <span class="m">1360000</span>, use: <span class="m">2</span>.229404106s, <span class="m">1</span>.639µs/op <span class="p">|</span> retry times: <span class="m">0</span>
+--- PASS: TestRingBuf_MPut <span class="o">(</span><span class="m">51</span>.29s<span class="o">)</span>
+
+<span class="o">===</span> RUN   TestRingBuf_MPut
+    TestRingBuf_MPut: rb_test.go:231: Grp: <span class="m">16</span>, Times: <span class="m">1360000</span>, use: <span class="m">42</span>.836537705s, <span class="m">31</span>.497µs/op
+    TestRingBuf_MPut: rb_test.go:232: Put: <span class="m">1360000</span>, use: <span class="m">39</span>.277276612s, <span class="m">28</span>.88µs/op <span class="p">|</span> retry times: <span class="m">0</span>
+    TestRingBuf_MPut: rb_test.go:233: Get: <span class="m">1360000</span>, use: <span class="m">3</span>.559261093s, <span class="m">2</span>.617µs/op <span class="p">|</span> retry times: <span class="m">0</span>
+--- PASS: TestRingBuf_MPut <span class="o">(</span><span class="m">53</span>.60s<span class="o">)</span>
+</code></pre></div>
+
+<p>我们运行多生产者多消费者的手工 benchmark 测试可以得到以上结果，这里给出的结果实例是两次运行的结果，原因是单独的工作站测试的参考价值一般话且不稳定。从结果中我们可以看到 put + get 的操作平均值大约在 19.313µs/op .. 31.497µs/op 之间。</p>
+<p>由于模拟了真实场景的消费情况，因此覆盖了 Enqueue/Dequeue 的各个分支尤其是做到了申请写入/读出权竞争状态的模拟，因此这里的数据比较有参考价值。</p>
+<p>1.639µs/op 的出列（610M/s），17.673µs/op 的入列（57M/s）已经是达到了我们预期的目标了。</p>
+<h5 id="_8">对照<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h5>
+<p>为了横向比较，我们以相同方式运行了别的例子，得到的结论是 ringBuf 大概在 9.734µs/op 左右，而对照者大约在 8.373µs/op 左右。</p>
+<p>之所以这组对照结果和 MPMC 有所不同，原因是对照组采用先一次性写入然后一次性读出的方式来计算 put+get 时长，所以我们使用同样的测试方式另行完成了对照测试。</p>
+<p>在高性能服务器上，工作性能有可能达到 1~2µs/op 级别（增加核心、增加内存，选择高总线带宽）：</p>
+<div class="highlight"><pre><span></span><code><span class="o">===</span> RUN   TestQueuePutGetLong
+    TestQueuePutGetLong: rb_test.go:399: Grp: <span class="m">64</span>, Times: <span class="m">20800000</span>, use: 2m1.90187948s, <span class="m">5</span>.86µs/op
+    TestQueuePutGetLong: rb_test.go:400: Put: <span class="m">20800000</span>, use: <span class="m">52</span>.716325629s, <span class="m">2</span>.534µs/op
+    TestQueuePutGetLong: rb_test.go:401: Get: <span class="m">20800000</span>, use: <span class="m">57</span>.048982796s, <span class="m">2</span>.742µs/op
+--- PASS: TestQueuePutGetLong <span class="o">(</span><span class="m">121</span>.90s<span class="o">)</span>
+</code></pre></div>
+
+<h5 id="_9">说明<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h5>
+<p>性能测试自己跑才能比较，因为我懒得去找标准机做 Benchmark。上面给出的数据是在 i5-5257U CPU @ 2.70GHz 的 MBP 上跑出来的，只能证明 Server 端表现可以更好，但不能当作独立的依据。</p>
+<h2 id="_10">🔚<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:1">
+<p><a href="https://zh.wikipedia.org/wiki/%E7%92%B0%E5%BD%A2%E7%B7%A9%E8%A1%9D%E5%8D%80">環形緩衝區 - 维基百科，自由的百科全书</a>&#160;<a class="footnote-backref" href="#fnref:1" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:2">
+<p><a href="http://wiki.c2.com/?CircularBuffer">http://wiki.c2.com/?CircularBuffer</a>&#160;<a class="footnote-backref" href="#fnref:2" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:3">
+<p><a href="https://www.boost.org/doc/libs/1_39_0/libs/circular_buffer/doc/circular_buffer.html">https://www.boost.org/doc/libs/1_39_0/libs/circular_buffer/doc/circular_buffer.html</a>&#160;<a class="footnote-backref" href="#fnref:3" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+<li id="fn:4">
+<p>多核 CPU，CPU集群：预取，乱序执行，超标量流水线，并发编程&#160;<a class="footnote-backref" href="#fnref:4" title="Jump back to footnote 4 in the text">&#8617;</a></p>
+</li>
+<li id="fn:5">
+<p>Paul E. McKenney: <a href="http://www.rdrop.com/users/paulmck/scalability/paper/whymb.2010.06.07c.pdf"><em>Memory Barriers: a Hardware View for Software Hackers</em></a>&#160;<a class="footnote-backref" href="#fnref:5" title="Jump back to footnote 5 in the text">&#8617;</a></p>
+</li>
+<li id="fn:6">
+<p>内存屏障 (Wikipedia): <a href="https://en.wikipedia.org/wiki/Memory_barrier">https://en.wikipedia.org/wiki/Memory_barrier</a>&#160;<a class="footnote-backref" href="#fnref:6" title="Jump back to footnote 6 in the text">&#8617;</a></p>
+</li>
+<li id="fn:7">
+<p>Intel® 64 and IA-32 Architectures Software Developer’s Manual, <a href="https://software.intel.com/en-us/articles/intel-sdm">https://software.intel.com/en-us/articles/intel-sdm</a>&#160;<a class="footnote-backref" href="#fnref:7" title="Jump back to footnote 7 in the text">&#8617;</a></p>
+</li>
+<li id="fn:8">
+<p>Memory Barriers/Fences, <a href="https://mechanical-sympathy.blogspot.jp/2011/07/memory-barriersfences.html">https://mechanical-sympathy.blogspot.jp/2011/07/memory-barriersfences.html</a>&#160;<a class="footnote-backref" href="#fnref:8" title="Jump back to footnote 8 in the text">&#8617;</a></p>
+</li>
+<li id="fn:9">
+<p>Memory Barriers: a Hardware View for Software Hackers, Paul E. McKenney, Linux Technology Center, IBM Beaverton, <a href="https://www.researchgate.net/publication/228824849_Memory_Barriers_a_Hardware_View_for_Software_Hackers">https://www.researchgate.net/publication/228824849_Memory_Barriers_a_Hardware_View_for_Software_Hackers</a>&#160;<a class="footnote-backref" href="#fnref:9" title="Jump back to footnote 9 in the text">&#8617;</a></p>
+</li>
+<li id="fn:10">
+<p>Intel Sandy Bridge Configuration, <a href="http://www.7-cpu.com/cpu/SandyBridge.html">http://www.7-cpu.com/cpu/SandyBridge.html</a>&#160;<a class="footnote-backref" href="#fnref:10" title="Jump back to footnote 10 in the text">&#8617;</a></p>
+</li>
+<li id="fn:11">
+<p>Intel’s Haswell CPU Microarchitecture, <a href="http://www.realworldtech.com/haswell-cpu/5/">http://www.realworldtech.com/haswell-cpu/5/</a>&#160;<a class="footnote-backref" href="#fnref:11" title="Jump back to footnote 11 in the text">&#8617;</a></p>
+</li>
+<li id="fn:12">
+<p>Write Combining, <a href="http://mechanical-sympathy.blogspot.com/2011/07/write-combining.html">http://mechanical-sympathy.blogspot.com/2011/07/write-combining.html</a>&#160;<a class="footnote-backref" href="#fnref:12" title="Jump back to footnote 12 in the text">&#8617;</a></p>
+</li>
+<li id="fn:13">
+<p>Memory ordering, <a href="https://en.wikipedia.org/wiki/Memory_ordering">https://en.wikipedia.org/wiki/Memory_ordering</a>&#160;<a class="footnote-backref" href="#fnref:13" title="Jump back to footnote 13 in the text">&#8617;</a></p>
+</li>
+<li id="fn:14">
+<p><a href="http://lday.me/2017/12/02/0018_cpp_atomic_summary/">C++内存屏障（内存顺序）总结</a>&#160;<a class="footnote-backref" href="#fnref:14" title="Jump back to footnote 14 in the text">&#8617;</a></p>
+</li>
+<li id="fn:15">
+<p><a href="https://holajiawei.com/race-and-memory/">Race Condition(竞态条件) 和Memory Barrier(内存屏障)</a>&#160;<a class="footnote-backref" href="#fnref:15" title="Jump back to footnote 15 in the text">&#8617;</a></p>
+</li>
+<li id="fn:16">
+<p><a href="https://tonybai.com/2020/03/10/visualizing-memory-management-in-golang/">可视化Go内存管理| Tony Bai</a>&#160;<a class="footnote-backref" href="#fnref:16" title="Jump back to footnote 16 in the text">&#8617;</a></p>
+</li>
+<li id="fn:100">
+<p><a href="https://spcl.inf.ethz.ch/Teaching/2017-dphpc/recitation/seqcons.pdf">DPHPC: Sequential Consistency - pdf/slider</a>&#160;<a class="footnote-backref" href="#fnref:100" title="Jump back to footnote 17 in the text">&#8617;</a></p>
+</li>
+<li id="fn:101">
+<p><a href="https://biz.51cto.com/art/201901/590602.htm">CPU Cache Line伪共享问题的总结和分析- 51CTO.COM</a>&#160;<a class="footnote-backref" href="#fnref:101" title="Jump back to footnote 18 in the text">&#8617;</a></p>
+</li>
+<li id="fn:201">
+<p><a href="https://wweir.cc/post/探索-golang-一致性原语/"><strong>探索Golang 一致性原语</strong>- 温习江湖</a>&#160;<a class="footnote-backref" href="#fnref:201" title="Jump back to footnote 19 in the text">&#8617;</a></p>
+</li>
+<li id="fn:202">
+<p><a href="https://golang.org/ref/mem">https://golang.org/ref/mem</a>&#160;<a class="footnote-backref" href="#fnref:202" title="Jump back to footnote 20 in the text">&#8617;</a></p>
+</li>
+<li id="fn:203">
+<p><a href="https://github.com/golang/go/wiki/LearnConcurrency">LearnConcurrency</a>: Read <a href="https://encore.dev/blog/advanced-go-concurrency">Advanced Go Concurrency Primitives</a>, Study <a href="https://golang.org/ref/mem">The Go Memory Model</a>&#160;<a class="footnote-backref" href="#fnref:203" title="Jump back to footnote 21 in the text">&#8617;</a></p>
+</li>
+<li id="fn:204">
+<p><a href="http://longlog.me/2018/09/12/2018-09-12-golang-mem/">Golang内存模型| apeipo的博客</a>&#160;<a class="footnote-backref" href="#fnref:204" title="Jump back to footnote 22 in the text">&#8617;</a></p>
+</li>
+<li id="fn:205">
+<p><a href="http://hugozhu.myalert.info/2013/04/20/31-golang-memory-model.html">Go语言内存模型</a>&#160;<a class="footnote-backref" href="#fnref:205" title="Jump back to footnote 23 in the text">&#8617;</a></p>
+</li>
+<li id="fn:206">
+<p><a href="https://www.jianshu.com/p/ba9114542bb7">Golang内存模型- 简书</a>&#160;<a class="footnote-backref" href="#fnref:206" title="Jump back to footnote 24 in the text">&#8617;</a></p>
+</li>
+<li id="fn:207">
+<p><a href="https://github.com/xitu/gold-miner/blob/master/TODO/concurrent-programming.md">Go并发编程中的那些事</a>&#160;<a class="footnote-backref" href="#fnref:207" title="Jump back to footnote 25 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid" aria-label="">
+        
+          <a href="../03.smp/" title="并发编程和多核编程概要" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+            </div>
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  上一页
+                </span>
+                并发编程和多核编程概要
+              </div>
+            </div>
+          </a>
+        
+        
+          <a href="../../../about/" title="About" class="md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-footer-nav__title">
+              <div class="md-ellipsis">
+                <span class="md-footer-nav__direction">
+                  下一页
+                </span>
+                About
+              </div>
+            </div>
+            <div class="md-footer-nav__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z" /></svg>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright &copy; 2019 - 2020 Hedzr Yeh<br/><div style="margin: 12px 0"><a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="知识共享许可协议" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />本作品采用<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">知识共享署名-非商业性使用-相同方式共享 4.0 国际许可协议</a>进行许可。</div>
+          </div>
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../assets/javascripts/vendor.36cbf620.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.00c583dd.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "\u590d\u5236", "clipboard.copied": "\u5df2\u590d\u5236", "search.config.lang": "ja", "search.config.pipeline": "", "search.config.separator": "[\\uff0c\\u3002]+", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c"}</script>
+      
+      <script>
+        app = initialize({
+          base: "../../..",
+          features: ["tabs"],
+          search: Object.assign({
+            worker: "../../../assets/javascripts/worker/search.7f7c8775.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+        <script src="../../../statics/javascripts/extra.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+      
+    
+  </body>
+</html>
